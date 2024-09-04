@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -157,11 +158,14 @@ def test_2D():
     X_train, X_test, z_train, z_test = train_test_split(X, z_flat, test_size=0.25)
 
     #----------------------------------------   Scaling -----------------------------
-    X_train_mean = np.mean(X_train) 
-    z_train_mean = np.mean(z_train)
-    X_train -= X_train_mean
-    z_train -= z_train_mean
-    X_test -= X_train_mean
+    stdsc = StandardScaler() # For x- and y-vals
+    X_train = stdsc.fit_transform(X_train)
+    X_test = stdsc.transform(X_test)
+
+    stdsc_z = StandardScaler() # For z-vals
+    z_train = stdsc_z.fit_transform(z_train.reshape(-1,1))
+    z_test = stdsc_z.transform(z_test.reshape(-1,1))
+    #z_train -= z_train_mean
 
 
     # Design Matrix Phi
@@ -176,15 +180,22 @@ def test_2D():
     z_tilde = Phi_train @ OLSbeta
 
     #----------------------------------------- Plotting -------------------
-    # Reshape for plotting
-    # Adding mean values for plotting
-    x_test = X_test[:,0].reshape((5,20)) + X_train_mean 
-    y_test = X_test[:,1].reshape((5,20)) + X_train_mean 
-    z_pred = z_pred.reshape((5,20)) + z_train_mean 
+    # -----Reshape for plotting
+    # -----Reverse Scaling with StandardScaler.inverse_transform()
+    X_test = stdsc.inverse_transform(X_test)
+    x_test = X_test[:,0].reshape((5,20)) #+ X_train_mean 
+    y_test = X_test[:,1].reshape((5,20)) #+ X_train_mean 
 
-    x_train = X_train[:,0].reshape((15,20)) + X_train_mean 
-    y_train = X_train[:,1].reshape((15,20)) + X_train_mean 
-    z_tilde = z_tilde.reshape((15,20)) + z_train_mean 
+    z_pred = stdsc_z.inverse_transform(z_pred)
+    z_pred = z_pred.reshape((5,20)) #+ z_train_mean 
+    
+
+    X_train = stdsc.inverse_transform(X_train)
+    x_train = X_train[:,0].reshape((15,20)) #+ X_train_mean 
+    y_train = X_train[:,1].reshape((15,20)) #+ X_train_mean
+
+    z_tilde = stdsc_z.inverse_transform(z_tilde) 
+    z_tilde = z_tilde.reshape((15,20)) #+ z_train_mean 
 
 
     fig = plt.figure()
@@ -213,10 +224,14 @@ def test_2D():
 
     
     # ----------------------------- MSE ---------------------
+    # Rescale with StandardScaler
     # Reshape z_train and z_test
+    z_test = stdsc_z.inverse_transform(z_test)
     z_test = z_test.reshape((5,20))
-    z_train = z_train.reshape((15,20)) + z_train_mean
-
+    
+    z_train = stdsc_z.inverse_transform(z_train)
+    z_train = z_train.reshape((15,20)) 
+    
 
     MSETrain_OLS = MSE(z_train, z_tilde)
     MSETest_OLS = MSE(z_test, z_pred)
