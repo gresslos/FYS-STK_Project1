@@ -9,3 +9,12 @@ This will lead to y_tilde = y_train
 (Look at y_tilde given split data to test and training data, and compara data (y_train) to fitted model (y_tilde))
 
 The code plots MSE and R2 for y_tilde/y_train which is respectivly 0.00 and 1.00.
+
+
+NOTE:
+
+Could look at the plots in TestRuns, but both the plots and task_a_b_c.py was pushed by accident. 
+
+Do not know how to delite it from Git. 
+
+I am new to Git.
