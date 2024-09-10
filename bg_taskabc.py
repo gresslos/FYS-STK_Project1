@@ -101,20 +101,22 @@ def test_1D():
         z_tilde_Ridge = np.zeros((len(lambdas), X_train.shape[0], 1))
         z_pred_Ridge = np.zeros((len(lambdas), X_test.shape[0], 1))
 
-        z_tilde_Lasso = np.zeros((len(lambdas), X_train.shape[0]))
-        z_pred_Lasso = np.zeros((len(lambdas), X_test.shape[0]))
+        z_tilde_Lasso = np.zeros((len(lambdas), X_train.shape[0], 1))
+        z_pred_Lasso = np.zeros((len(lambdas), X_test.shape[0], 1))
 
         for j in range(len(lambdas)):
             lmb = lambdas[j]
             Ridgebeta = np.linalg.inv(X_train.T @ X_train + lmb*I) @ X_train.T @ z_train
-            LassoReg = linear_model.Lasso(lmb,fit_intercept=False) # Not include intercept
+            LassoReg = Lasso(lmb,fit_intercept=False) # Not include intercept
             LassoReg.fit(X_train, z_train)
             # and then make the prediction
             z_tilde_Ridge[j] = X_train @ Ridgebeta
             z_pred_Ridge[j] = X_test @ Ridgebeta
 
-            z_tilde_Lasso[j] = LassoReg.predict(X_train)
-            z_pred_Lasso[j] = LassoReg.predict(X_test)
+            #z_tilde_Lasso[j] = LassoReg.predict(X_train)
+            #z_pred_Lasso[j] = LassoReg.predict(X_test)
+            z_tilde_Lasso[j] = LassoReg.predict(X_train).reshape(z_tilde_Lasso[j].shape)
+            z_pred_Lasso[j] = LassoReg.predict(X_test).reshape(z_pred_Lasso[j].shape)
 
 
 
@@ -140,8 +142,8 @@ def test_1D():
         z_tilde_Ridge = [stdsc_z.inverse_transform(z_tilde_Ridge[j]) for j in range(len(lambdas))]
 
         # Lasso
-        z_pred_Lasso = stdsc_z.inverse_transform(z_pred_Lasso)
-        z_tilde_Lasso = stdsc_z.inverse_transform(z_tilde_Lasso)
+        z_pred_Lasso = [stdsc_z.inverse_transform(z_pred_Lasso[j]) for j in range(len(lambdas))]
+        z_tilde_Lasso = [stdsc_z.inverse_transform(z_tilde_Lasso[j]) for j in range(len(lambdas))]
 
         
 
@@ -152,9 +154,9 @@ def test_1D():
         R2Train_OLS = R2(z_train, z_tilde)
         R2Test_OLS = R2(z_test, z_pred)
 
-        #print(f'Polynomial Degree {deg[i]}')
-        #print(f"Training MSE for OLS = {MSETrain_OLS:.2e} \nTest MSE OLS = {MSETest_OLS:.2e} \n")
-        #print(f"Training R2 for OLS = {R2Train_OLS:.2e} \nTest R2 OLS = {R2Test_OLS:.2e}\n")
+        print(f'Polynomial Degree {deg[i]}')
+        print(f"Training MSE for OLS = {MSETrain_OLS:.2e} \nTest MSE OLS = {MSETest_OLS:.2e} \n")
+        print(f"Training R2 for OLS = {R2Train_OLS:.2e} \nTest R2 OLS = {R2Test_OLS:.2e}\n")
 
 
         # Sort the training and test data and corresponding predictions
@@ -210,7 +212,7 @@ def test_1D():
 
         # Lasso
         axL = fig_Lasso.add_subplot(2,3,i+1)
-        fig_Lasso.suptitle('Ridge Regression')
+        fig_Lasso.suptitle('Lasso Regression')
         axL.set_title(f'Pol.degree = {deg[i]}')
 
         surf = axL.plot(x, z, label='FrankeFunction') 
@@ -230,9 +232,6 @@ def test_1D():
     fig_Lasso.savefig('FrankeFunction_1D_regression_Lasso.png')
     plt.show()
 
-
-
-    
 
 
 def test_2D():
@@ -296,6 +295,10 @@ def test_2D():
         z_pred = Phi_test @ OLSbeta
         z_tilde = Phi_train @ OLSbeta
 
+        # Adding OLSbeta to list 
+        OLSbeta_list.append(OLSbeta)
+
+
         # ---------------------------------- MANUALLY RIDGE + SCIKIT-LEARN LASSO ----------------------
         num_terms = int((deg[i] + 1) * (deg[i] + 2) / 2 - 1) # From Design_Matrix_2D()
         I = np.eye(num_terms,num_terms)
@@ -305,8 +308,8 @@ def test_2D():
         z_tilde_Ridge = np.zeros((len(lambdas), X_train.shape[0],1))
         z_pred_Ridge = np.zeros((len(lambdas), X_test.shape[0], 1))
 
-        z_tilde_Lasso = np.zeros((len(lambdas), X_train.shape[0]))
-        z_pred_Lasso = np.zeros((len(lambdas), X_test.shape[0]))
+        z_tilde_Lasso = np.zeros((len(lambdas), X_train.shape[0], 1))
+        z_pred_Lasso = np.zeros((len(lambdas), X_test.shape[0], 1))
 
         for j in range(len(lambdas)):
             lmb = lambdas[j]
@@ -319,24 +322,16 @@ def test_2D():
             z_tilde_Ridge[j] = Phi_train @ Ridgebeta
             z_pred_Ridge[j] = Phi_test @ Ridgebeta
 
-            z_tilde_Lasso[j] = LassoReg.predict(Phi_train)
-            z_pred_Lasso[j] = LassoReg.predict(Phi_test)
+            z_tilde_Lasso[j] = LassoReg.predict(Phi_train).reshape(z_tilde_Lasso[j].shape)
+            z_pred_Lasso[j] = LassoReg.predict(Phi_test).reshape(z_pred_Lasso[j].shape)
 
+            # Adding beta's to list 
             Ridgebeta_list.append(Ridgebeta)
             Lassobeta_list.append(LassoReg.coef_)
 
-            # ---------------------------------- MSI -------------------------------------------------
-            # Ridge
-            Ridge_MSE.append([MSE(z_train, z_tilde_Ridge[j]),MSE(z_test, z_pred_Ridge[j])])
-            Ridge_R2.append([R2(z_train, z_tilde_Ridge[j]), R2(z_test, z_pred_Ridge[j])])
-
-            # Lasso
-            Lasso_MSE.append([MSE(z_train, z_tilde_Lasso[j]),MSE(z_test, z_pred_Lasso[j])])
-            Lasso_R2.append([R2(z_train, z_tilde_Lasso[j]), R2(z_test, z_pred_Lasso[j])])
-
 
         # -------------------------------------------- Rescaling --------------------------------------
-        #Reverse Scaling with StandardScaler.inverse_transform()
+        #Reverse wScaling with StandardScaler.inverse_transform()
         X_test = stdsc.inverse_transform(X_test)
         x_test = X_test[:,0]
         y_test = X_test[:,1]
@@ -357,8 +352,8 @@ def test_2D():
         z_tilde_Ridge = [stdsc_z.inverse_transform(z_tilde_Ridge[j]) for j in range(len(lambdas))]
         
         # Lasso-------------
-        z_pred_Lasso = stdsc_z.inverse_transform(z_pred_Lasso)
-        z_tilde_Lasso = stdsc_z.inverse_transform(z_tilde_Lasso) 
+        z_pred_Lasso = [stdsc_z.inverse_transform(z_pred_Lasso[j]) for j in range(len(lambdas))]
+        z_tilde_Lasso = [stdsc_z.inverse_transform(z_tilde_Lasso[j]) for j in range(len(lambdas))]
         
 
         # DONT THINK WE NEED
@@ -374,26 +369,26 @@ def test_2D():
         #z_tilde_Ridge = [z_tilde_Ridge[j].reshape((15,20)) for j in range(len(lambdas))]
         #z_pred = z_pred.reshape((5,20)) 
         #z_tilde = z_tilde.reshape((15,20))  
-        
-
-        # Adding OLSbeta to list 
-        OLSbeta_list.append(OLSbeta)
+    
 
 
-        # ----------------------------- MSE ---------------------
-        # only OLS here, Ridge and Lasso inside Regression Loop
-        MSETrain_OLS = MSE(z_train, z_tilde)
-        MSETest_OLS = MSE(z_test, z_pred)
+        # ------------------------------------------ MSE -----------------------------------------
+        for j in range(len(lambdas)):
+            # Ridge
+            Ridge_MSE.append([MSE(z_train, z_tilde_Ridge[j]),MSE(z_test, z_pred_Ridge[j])])
+            Ridge_R2.append([R2(z_train, z_tilde_Ridge[j]), R2(z_test, z_pred_Ridge[j])])
 
-        R2Train_OLS = R2(z_train, z_tilde)
-        R2Test_OLS = R2(z_test, z_pred)
+            # Lasso
+            Lasso_MSE.append([MSE(z_train, z_tilde_Lasso[j]),MSE(z_test, z_pred_Lasso[j])])
+            Lasso_R2.append([R2(z_train, z_tilde_Lasso[j]), R2(z_test, z_pred_Lasso[j])])
+            #print(MSE(z_train, z_tilde_[j]))
         
         #print(f'      OLS Regression \n   Polynomial Degree {deg[i]}\n')
         #print(f"Training MSE for OLS = {MSETrain_OLS:10.2e} \nTest MSE OLS = {MSETest_OLS:18.2e} \n")
         #print(f"Training R2 for OLS = {R2Train_OLS:10.2e} \nTest R2 OLS = {R2Test_OLS:18.2e} \n \n")
 
-        OLS_MSE.append([MSETrain_OLS, MSETest_OLS])
-        OLS_R2.append([R2Train_OLS, R2Test_OLS])
+        OLS_MSE.append([MSE(z_train, z_tilde), MSE(z_test, z_pred)])
+        OLS_R2.append([R2(z_train, z_tilde), R2(z_test, z_pred)])
 
 
 
@@ -421,7 +416,7 @@ def test_2D():
         ax.set_ylabel('Y axis')
         ax.set_zlabel('Z axis')
         ax.set_zlim(-0.10, 1.40)
-        ax.legend()
+        ax.legend(loc='upper left', fontsize='small')
 
         # Ridge
         axR = fig_Ridge.add_subplot(2,3,i+1, projection='3d')
@@ -440,7 +435,7 @@ def test_2D():
         axR.set_ylabel('Y axis')
         axR.set_zlabel('Z axis')
         axR.set_zlim(-0.10, 1.40)
-        axR.legend()
+        axR.legend(loc='upper left', fontsize='small')
         
 
         # Lasso
@@ -456,20 +451,21 @@ def test_2D():
         if test:
             # Test Lasso lambda = 1
             # See functionality of Lasso
-            pred = axL.scatter(x_test, y_test, z_pred_Lasso[-1], color='y', s=10, label=f'z_Pred, lmd = {lambdas[-1]}') 
-            tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[-1], color='y', s=10, label=f'z_Tilde, lmd = {lambdas[-1]}')
-            fig_Lasso.suptitle(f'Lasso Regression\n  Lambda = {lambdas[-1]}', fontsize=16)
+            pred = axL.scatter(x_test, y_test, z_pred_Lasso[-1], color='r', s=10, label=f'z_Pred, lmd = {lambdas[-1]}') 
+            tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[-1], color='g', s=10, label=f'z_Tilde, lmd = {lambdas[-1]}')
+            fig_Lasso.suptitle(f'TEST: Lasso Regression\n  Lambda = {lambdas[-1]}', fontsize=16)
         else: 
-            pred = axL.scatter(x_test, y_test, z_pred_Lasso[-3], color='r', s=10, label=f'z_Pred, lmd = {lambdas[-1]}') 
-            tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[-3], color='g', s=10, label=f'z_Tilde, lmd = {lambdas[-1]}')
-            fig_Lasso.suptitle(f'Lasso Regression\n  Lambda = {lambdas[-3]}', fontsize=16)
+            k = -3 # Choose which lambda to plot
+            pred = axL.scatter(x_test, y_test, z_pred_Lasso[k], color='r', s=10, label=f'z_Pred, lmd = {lambdas[k]}') 
+            tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[k], color='g', s=10, label=f'z_Tilde, lmd = {lambdas[k]}')
+            fig_Lasso.suptitle(f'Lasso Regression\n  Only lambda = {lambdas[k]}', fontsize=16)
 
         axL.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
         axL.set_xlabel('X axis')
         axL.set_ylabel('Y axis')
         axL.set_zlabel('Z axis')
         axL.set_zlim(-0.10, 1.40)
-        axL.legend()
+        axL.legend(loc='upper left', fontsize='small')
 
     
     # Add a color bar which maps values to colors.
@@ -477,7 +473,7 @@ def test_2D():
     plt.tight_layout()
     fig.savefig('OLS.png')
     fig_Ridge.savefig('Ridge.png')
-    #plt.show()
+    plt.show()
 
 
 
@@ -488,6 +484,8 @@ def test_2D():
     # ------------------------------------------------ PRINTING INFO ------------------------------------------------------
     want_beta = False #True # if want to see beta-values
 
+
+
     # OLS DATA
     OLS_MSE = np.array(OLS_MSE)
     OLS_R2 = np.array(OLS_R2)
@@ -495,8 +493,7 @@ def test_2D():
     print('Elements: Beta Transpose, MSE, R2')
     for d, b, MSE_train, MSE_test, R2_train, R2_test in zip(deg, OLSbeta_list, OLS_MSE[:,0], OLS_MSE[:,1], OLS_R2[:,0], OLS_R2[:,1]):
         print(f'\nPolynomial Degree  {d}') 
-        print(f'MSE_train = {MSE_train:10.3e}    MSE_test = {MSE_test:10.3e}')
-        print(f'R2_train  = {R2_train:10.3e}    R2_test  = {R2_test:10.3e}')
+        print(f'MSE_train = {MSE_train:10.3e}    MSE_test = {MSE_test:10.3e}    R2_train  = {R2_train:10.3e}    R2_test  = {R2_test:10.3e}')
         if want_beta:
             print(f'Beta = {b.T}')
 
@@ -510,8 +507,10 @@ def test_2D():
         print(f'\nPolynomial Degree  {deg[i]}') 
         #print(Ridgebeta_list)
         for j in range(len(lambdas)):
-            print(f'Lambda = {lambdas[j]:10}:    MSE_train = {Ridge_MSE[i*len(lambdas) + j][0]:10.3e}    MSE_test = {Ridge_MSE[i*len(lambdas) + j][1]:10.3e}')
-            print(f'Lambda = {lambdas[j]:10}:    R2_train  = {Ridge_R2[i*len(lambdas) + j][0]:10.3e}    R2_test  = {Ridge_R2[i*len(lambdas) + j][1]:10.3e}')
+            print(
+                f'Lambda = {lambdas[j]:10}:    MSE_train = {Ridge_MSE[i*len(lambdas) + j][0]:10.3e}    MSE_test = {Ridge_MSE[i*len(lambdas) + j][1]:10.3e}     '
+                f'R2_train  = {Ridge_R2[i*len(lambdas) + j][0]:10.3e}    R2_test  = {Ridge_R2[i*len(lambdas) + j][1]:10.3e}'
+                )
             if want_beta:
                 print(f'Beta = {Ridgebeta_list[i*len(lambdas) + j].T} \n')
 
@@ -526,8 +525,10 @@ def test_2D():
         print(f'\nPolynomial Degree  {deg[i]}') 
         #print(Ridgebeta_list)
         for j in range(len(lambdas)):
-            print(f'Lambda = {lambdas[j]:10}:    MSE_train = {Lasso_MSE[i*len(lambdas) + j][0]:10.3e}    MSE_test = {Lasso_MSE[i*len(lambdas) + j][1]:10.3e}')
-            print(f'Lambda = {lambdas[j]:10}:    R2_train  = {Lasso_R2[i*len(lambdas) + j][0]:10.3e}    R2_test  = {Lasso_R2[i*len(lambdas) + j][1]:10.3e}')
+            print(
+                f'Lambda = {lambdas[j]:10}:    MSE_train = {Lasso_MSE[i*len(lambdas) + j][0]:10.3e}    MSE_test = {Lasso_MSE[i*len(lambdas) + j][1]:10.3e}     '
+                f'R2_train  = {Lasso_R2[i*len(lambdas) + j][0]:10.3e}    R2_test  = {Lasso_R2[i*len(lambdas) + j][1]:10.3e}'
+                )
             if want_beta:
                 print(f'Beta = {Lassobeta_list[i*len(lambdas) + j].T} \n')
 
@@ -535,8 +536,6 @@ def test_2D():
 
 
 
-    
-    
 
 #test_1D()
 test_2D()
