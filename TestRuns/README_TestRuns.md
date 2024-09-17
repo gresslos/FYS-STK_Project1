@@ -16,6 +16,6 @@ NOTE:
 
 Could look at the plots in TestRuns, but both the plots and task_a_b_c.py was pushed by accident. 
 
-Do not know how to delite it from Git. 
+Do not know how to delete it from Git. 
 
-I am new to Git.
+We are new to Git.
