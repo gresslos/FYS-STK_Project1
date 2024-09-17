@@ -10,6 +10,7 @@ This will lead to y_tilde = y_train
 
 The code plots MSE and R2 for y_tilde/y_train which is respectivly 0.00 and 1.00.
 
+Plots is for design matrix = Identity Matrix 
 
 NOTE:
 
