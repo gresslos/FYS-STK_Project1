@@ -194,10 +194,11 @@ def test_1D():
         reg = ax.plot(x_test_sort, z_pred_sort, label=f'Predicted z(x)')
         ax.set_ylim(.0, .3)
         ax.grid()
-        ax.legend()
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-
+        if i == 0: # Only showing legends and labels for fist plot (too much information)
+            ax.legend()
+            ax.set_xlabel('x')
+            ax.set_ylabel('y')
+        
         # Ridge
         axR = fig_Ridge.add_subplot(2,3,i+1)
         fig_Ridge.suptitle('Ridge Regression')
@@ -207,8 +208,11 @@ def test_1D():
         reg = [axR.plot(x_test_sort, z_pred_Ridge_sort[j], label=f'z_pred(x), lmd = {lambdas[j]}') for j in range(len(lambdas))]
         axR.set_ylim(.0, .3)
         axR.grid()
-        axR.set_xlabel('x')
-        axR.set_ylabel('y')
+        if i == 0:
+            axR.legend()
+            axR.set_xlabel('x')
+            axR.set_ylabel('y')
+
 
         # Lasso
         axL = fig_Lasso.add_subplot(2,3,i+1)
@@ -219,11 +223,14 @@ def test_1D():
         reg = [axL.plot(x_test_sort, z_pred_Lasso_sort[j], label=f'z_pred(x), lmd = {lambdas[j]}') for j in range(len(lambdas))]
         axL.set_ylim(.0, .3)
         axL.grid()
-        axL.set_xlabel('x')
-        axL.set_ylabel('y')
+        if i == 0:
+            axL.legend()
+            axL.set_xlabel('x')
+            axL.set_ylabel('y')
 
-    axR.legend()
-    axL.legend()
+        
+
+    
     fig_Ridge.tight_layout()
     fig_Lasso.tight_layout()
 
@@ -248,7 +255,8 @@ def test_2D():
     y_flat = y.flatten()
     z_flat = z.flatten()
 
-
+    # Create new matrix X for train / test -splitting  
+    # only one imput for x (both x and y) and one for z
     X = np.vstack((x_flat,y_flat)).T
     # Note: X[:,0] = x-vals  X[:,1] = y-vals
 
@@ -412,11 +420,14 @@ def test_2D():
 
         fig.suptitle('OLS Regression', fontsize=16)
         ax.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-        ax.set_xlabel('X axis')
-        ax.set_ylabel('Y axis')
-        ax.set_zlabel('Z axis')
         ax.set_zlim(-0.10, 1.40)
-        ax.legend(loc='upper left', fontsize='small')
+
+        # For organizing, too much info in plots
+        if i == 0:
+            ax.set_xlabel('X axis')
+            ax.set_ylabel('Y axis')
+            ax.set_zlabel('Z axis')
+            ax.legend(loc='upper left', fontsize='small')
 
         # Ridge
         axR = fig_Ridge.add_subplot(2,3,i+1, projection='3d')
@@ -431,11 +442,12 @@ def test_2D():
 
         fig_Ridge.suptitle(f'Ridge Regression\n  Lambda = {lambdas[-1]}', fontsize=16)
         axR.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-        axR.set_xlabel('X axis')
-        axR.set_ylabel('Y axis')
-        axR.set_zlabel('Z axis')
         axR.set_zlim(-0.10, 1.40)
-        axR.legend(loc='upper left', fontsize='small')
+        if i == 0:
+            axR.set_xlabel('X axis')
+            axR.set_ylabel('Y axis')
+            axR.set_zlabel('Z axis')
+            axR.legend(loc='upper left', fontsize='small')
         
 
         # Lasso
@@ -461,18 +473,28 @@ def test_2D():
             fig_Lasso.suptitle(f'Lasso Regression\n  Only lambda = {lambdas[k]}', fontsize=16)
 
         axL.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-        axL.set_xlabel('X axis')
-        axL.set_ylabel('Y axis')
-        axL.set_zlabel('Z axis')
         axL.set_zlim(-0.10, 1.40)
-        axL.legend(loc='upper left', fontsize='small')
+        if i == 0:
+            axL.set_xlabel('X axis')
+            axL.set_ylabel('Y axis')
+            axL.set_zlabel('Z axis')
+            axL.legend(loc='upper left', fontsize='small')
 
     
     # Add a color bar which maps values to colors.
-    fig.colorbar(surf, shrink=0.5, aspect=5)
-    plt.tight_layout()
+    colorbar = fig.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
+    colorbar.ax.set_position([0.75, 0.2, 0.7, 0.2])
+
+    colorbarR = fig_Ridge.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
+    colorbarR.ax.set_position([0.75, 0.2, 0.7, 0.2])
+
+    colorbarL = fig_Lasso.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
+    colorbarL.ax.set_position([0.75, 0.2, 0.7, 0.2])
+
+
     fig.savefig('OLS.png')
     fig_Ridge.savefig('Ridge.png')
+    fig_Lasso.savefig('Lasso.png')
     plt.show()
 
 
@@ -538,4 +560,25 @@ def test_2D():
 
 
 #test_1D()
+
 test_2D()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
