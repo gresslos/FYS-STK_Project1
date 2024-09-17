@@ -67,7 +67,7 @@ def Design_Matrix_2D(deg, X):
 Computation Functions
 """
 
-def regression():
+def regression(savefig=False):
 
     # ------------------------------- Make data -------------------------------------
     x = np.linspace(0, 1, 20+1)
@@ -281,8 +281,9 @@ def regression():
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
     plt.tight_layout()
-    #fig.savefig('OLS.png')
-    #fig_Ridge.savefig('Ridge.png')
+    if savefig == True:
+        fig.savefig('OLS.png')
+        fig_Ridge.savefig('Ridge.png')
     plt.show()
 
 
@@ -446,10 +447,10 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
     
     
     plt.figure(dpi=200)
-    plt.plot(n_list, error_test, label='Testing MSE', color='red')
-    plt.plot(n_list, error_train, label='Training MSE', color='blue')
+    plt.plot(n_list, np.log10(error_test), label='Testing MSE', color='red')
+    plt.plot(n_list, np.log(error_train), label='Training MSE', color='blue')
     plt.xlabel('# of x (and y) points')
-    plt.ylabel('Mean Square Error')
+    plt.ylabel('log(Mean Square Error)')
     plt.xticks(n_list)
     plt.title('Testing MSE vs Training MSE', fontsize=10)
     plt.legend()
@@ -555,10 +556,10 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
     
     
     plt.figure(dpi=200)
-    plt.plot(deg, error_test, label='Testing MSE', color='red')
-    plt.plot(deg, error_train, label='Training MSE', color='blue')
+    plt.plot(deg, np.log10(error_test), label='Testing MSE', color='red')
+    plt.plot(deg, np.log10(error_train), label='Training MSE', color='blue')
     plt.xlabel('Polynomial Degree')
-    plt.ylabel('Variance')
+    plt.ylabel('log(Mean Square Error)')
     plt.xticks(deg)
     plt.title('Testing MSE vs Training MSE', fontsize=10)
     plt.legend()
@@ -567,6 +568,7 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
 
 
 
+#comment and uncomment to actually run parts of the code
 #regression()
 bootstrap_num()
 bootstrap_comp()
