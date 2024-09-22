@@ -1,8 +1,6 @@
-Test_identity_matrix.py is a copy of bg_taskabc.py, but include:
+Test_identity_matrix.py is a copy of a later version of bg_taskabc.py (small changes in setup but overall the same regression method). It include:
 
-'test_X_is_identity_matrix = True'- statement. 
-
-This will allow for the code to set the design matrix to the identity matrix.
+'test_X_is_identity_matrix = True'- statement which will allow for the code to set the design matrix to the identity matrix.
 
 This will lead to y_tilde = y_train
 
