@@ -23,7 +23,7 @@ np.random.seed(1) #set seed for easier troubleshooting
 
 
 
-def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=10, k=10, a=-5, b=1):
+def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10, a=-5, b=1):
     #The task doesn't specifically say but I think that the task wants you to
     #vary complexity.
     #For each complexity when using Ridge & LASSO regression you should also
@@ -123,10 +123,10 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=10, k=10,
             z_test = stdsc_z.inverse_transform(z_test)
             
             #rescale the prediction & model
-            z_pred_OLS    = stdsc_z.inverse_transform( (Phi_test @ OLSbeta).reshape(1,-1)    )
-            z_tilde_OLS   = stdsc_z.inverse_transform( (Phi_train @ OLSbeta).reshape(1,-1)   )
-            z_pred_Ridge  = stdsc_z.inverse_transform( (Phi_test @ Ridgebeta).reshape(1,-1)  )
-            z_tilde_Ridge = stdsc_z.inverse_transform( (Phi_train @ Ridgebeta).reshape(1,-1) )
+            z_pred_OLS    = stdsc_z.inverse_transform( (Phi_test @ OLSbeta).reshape(-1,1)    )
+            z_tilde_OLS   = stdsc_z.inverse_transform( (Phi_train @ OLSbeta).reshape(-1,1)   )
+            z_pred_Ridge  = stdsc_z.inverse_transform( (Phi_test @ Ridgebeta).reshape(-1,1)  )
+            z_tilde_Ridge = stdsc_z.inverse_transform( (Phi_train @ Ridgebeta).reshape(-1,1) )
             #z_Lasso and z_Ridge should have the same shape
             z_pred_Lasso  = stdsc_z.inverse_transform( LassoReg.predict(Phi_test).reshape(z_pred_Ridge.shape)   )
             z_tilde_Lasso = stdsc_z.inverse_transform( LassoReg.predict(Phi_train).reshape(z_tilde_Ridge.shape) )
@@ -168,37 +168,7 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=10, k=10,
         ax1[i].grid()
         
     plt.show()
-    
-    
-    
-    k_range = np.linspace(1, k, k)
-    cmap = plt.colormaps['inferno']
-    
-    fig2 = plt.figure(figsize=(13,8), dpi=200)
-    ax2 = fig2.subplots(1,2)
-    fig2.suptitle('The chosen $\lambda$ values for each complexity')
-    
-    ax2[0].set_yscale("log")
-    for i in range( lmbda_array_Ridge.shape[0] ):
-        ax2[0].plot(k_range, lmbda_array_Ridge[i], label=f"Complexity = {deg[i]}")
-    ax2[0].set_xlabel('Fold Number')
-    ax2[0].set_ylabel('$\lambda$')
-    ax2[0].set_xticks(k_range)
-    ax2[0].set_title('Ridge - $\lambda$-values for each complexity')
-    ax2[0].legend()
-    ax2[0].grid()
-    
-    ax2[1].set_yscale("log")
-    for i in range( lmbda_array_Lasso.shape[0] ):
-        ax2[1].plot(k_range, lmbda_array_Lasso[i], label=f"Complexity = {deg[i]}")
-    ax2[1].set_xlabel(f"Fold Number")
-    ax2[1].set_ylabel('$\lambda$')
-    ax2[1].set_xticks(k_range)
-    ax2[1].set_title('Lasso - $\lambda$-values for each complexity')
-    ax2[1].legend()
-    ax2[1].grid()
-    
-    plt.show()
+
     
 
 
