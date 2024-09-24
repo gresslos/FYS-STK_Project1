@@ -427,41 +427,17 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
         bias_train[i]     = np.mean( (z_train - np.mean(z_tilde, axis=1, keepdims=True))**2 )
         variance_train[i] = np.mean( np.var(z_tilde, axis=1, keepdims=True)                 )
     
-    
-    fig = plt.figure(figsize=(12,10))
-    ax = fig.subplots(2,1)
-    fig.suptitle('Bias-Variance Tradeoff (Bootstrap, # of datapoints)')
-    
-    ax[0].set_yscale("log")
-    ax[0].plot(n_list, bias_test, label='Testing Bias', color='red')
-    ax[0].plot(n_list, bias_train, label='Training Bias', color='blue')
-    ax[0].set_xlabel('# of x (and y) points')
-    ax[0].set_ylabel('Bias')
-    ax[0].set_xticks(n_list)
-    ax[0].set_title('Testing Bias vs Training Bias', fontsize=10)
-    ax[0].legend()
-    ax[0].grid()
-    
-    ax[1].set_yscale("log")
-    ax[1].plot(n_list, variance_test, label='Testing Variance', color='red')
-    ax[1].plot(n_list, variance_train, label='Training Variance', color='blue')
-    ax[1].set_xlabel('# of x (and y) points')
-    ax[1].set_ylabel('Variance')
-    ax[1].set_xticks(n_list)
-    ax[1].set_title('Testing Variance vs Training Variance', fontsize=10)
-    ax[1].legend()
-    ax[1].grid()
-    plt.show()
-    
+
     
     plt.figure(dpi=200)
     plt.yscale('log')
-    plt.plot(n_list, error_test, label='Testing MSE', color='red')
-    plt.plot(n_list, error_train, label='Training MSE', color='blue')
-    plt.xlabel('# of x (and y) points')
-    plt.ylabel('Mean Square Error')
+    plt.plot(n_list, error_test, label='Mean Square Error', color='red')
+    plt.plot(n_list, bias_test, label='Bias', color='blue')
+    plt.plot(n_list, variance_test, label='Variance', color='lime')
+    plt.xlabel('Number of datapoints (in x & y direction)')
+    plt.ylabel('Error')
     plt.xticks(n_list)
-    plt.title('Testing MSE vs Training MSE', fontsize=10)
+    plt.title('Bias-Variance Trade Off (Number of datapoints)', fontsize=10)
     plt.legend()
     plt.grid()
     plt.show()
@@ -469,7 +445,7 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
 
 
 
-def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
+def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
     x = np.linspace(0, 1, special_num)
     y = np.linspace(0, 1, special_num)
     x, y = np.meshgrid(x,y)
@@ -538,42 +514,16 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
         variance_train[i] = np.mean( np.var(z_tilde, axis=1, keepdims=True)                 )
     
     
-    fig = plt.figure(figsize=(12,10))
-    
-    ax = fig.subplots(2,1)
-    fig.suptitle('Bias-Variance Tradeoff (Bootstrap, Complexity)')
-    
-    ax[0].set_yscale('log')
-    ax[0].plot(deg, bias_test, label='Testing Bias', color='red')
-    ax[0].plot(deg, bias_train, label='Training Bias', color='blue')
-    ax[0].set_xlabel('Polynomial degree')
-    ax[0].set_ylabel('Bias')
-    ax[0].set_xticks(deg)
-    ax[0].set_title('Testing Bias vs Training Bias', fontsize=10)
-    ax[0].legend()
-    ax[0].grid()
-    
-    ax[1].set_yscale('log')
-    ax[1].plot(deg, variance_test, label='Testing Variance', color='red')
-    ax[1].plot(deg, variance_train, label='Training Variance', color='blue')
-    ax[1].set_xlabel('Polynomial degree')
-    ax[1].set_ylabel('Variance')
-    ax[1].set_xticks(deg)
-    ax[1].set_title('Testing Variance vs Training Variance', fontsize=10)
-    ax[1].legend()
-    ax[1].grid()
-    
-    plt.show()
-    
     
     plt.figure(dpi=200)
     plt.yscale('log')
-    plt.plot(deg, error_test, label='Testing MSE', color='red')
-    plt.plot(deg, error_train, label='Training MSE', color='blue')
+    plt.plot(deg, error_test, label='Mean Square Error', color='red')
+    plt.plot(deg, bias_test, label='Bias', color='blue')
+    plt.plot(deg, variance_test, label='Variance', color='lime')
     plt.xlabel('Polynomial Degree')
-    plt.ylabel('Mean Square Error')
+    plt.ylabel('Error')
     plt.xticks(deg)
-    plt.title('Testing MSE vs Training MSE', fontsize=10)
+    plt.title('Bias-Variance Trade Off (Complexity)', fontsize=10)
     plt.legend()
     plt.grid()
     plt.show()
