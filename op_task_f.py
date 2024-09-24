@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 from random import random, seed
 from tqdm import tqdm
@@ -96,6 +97,7 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
             searchRidge = GridSearchCV(modelRidge, parameters, scoring='neg_mean_squared_error', cv=kf)
             searchRidge.fit(Phi_train, z_train)
             lmbda_array_Ridge[i,j] = searchRidge.best_params_['alpha']
+            avg_lmbda_Ridge = sp.stats.mstats.gmean(lmbda_array_Ridge, axis=1)
             
             #calculate the model using the Ridge method
             I = np.eye( np.shape(Phi_train)[1] )
@@ -109,6 +111,7 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
             searchLasso = GridSearchCV(modelLasso, parameters, scoring='neg_mean_squared_error', cv=kf)
             searchLasso.fit(Phi_train, z_train)
             lmbda_array_Lasso[i,j] = searchLasso.best_params_['alpha']
+            avg_lmbda_Lasso = sp.stats.mstats.gmean(lmbda_array_Lasso, axis=1)
             
             #calculate the model using the LASSO method
             LassoReg = Lasso(alpha=lmbda_array_Lasso[i,j], fit_intercept=False) # Not include intercept
@@ -167,6 +170,20 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
         ax1[i].legend()
         ax1[i].grid()
         
+    plt.show()
+    
+    
+    plt.figure(dpi=200)
+    plt.yscale('log')
+    plt.plot(deg, avg_lmbda_Ridge, label='Optimal $\lambda$ value (Ridge)', linestyle='dashed', color='black')
+    plt.plot(deg, avg_lmbda_Lasso, label='Optimal $\lambda$ value (LASSO)', linestyle='dashdot', color='black')
+    plt.axvline(5, linestyle='dashed', color='grey', label='Degree 5')
+    plt.xlabel('Polynomial degree')
+    plt.ylabel('Geometric mean of $\lambda$')
+    plt.xticks(deg)
+    plt.title('Geometric mean of optimal $\lambda$ for each complexity')
+    plt.grid()
+    plt.legend()
     plt.show()
 
     
