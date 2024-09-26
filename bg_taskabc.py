@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import warnings
+from sklearn.exceptions import ConvergenceWarning
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -57,8 +59,10 @@ def regression(x, y, z, deg_max = 6, bool_info = False):
 
     X_train, X_test, z_train, z_test = train_test_split(X, z_flat, test_size=0.25)
 
-
-    deg = np.arange(deg_max - 5, deg_max) # degrees of polynomial
+    if __name__ == "__main__": # if run bg_taskabc.py
+        deg = np.arange(deg_max - 5, deg_max) # degrees of polynomial
+    else:                      # if run task_g.py
+        deg = np.arange(deg_max - 25, deg_max+1,5) # degrees of polynomial
 
     OLSbeta_list   = [] 
     Ridgebeta_list = []
@@ -71,9 +75,17 @@ def regression(x, y, z, deg_max = 6, bool_info = False):
     Lasso_R2       = []
 
 
-    fig       = plt.figure(figsize=(12,7))
-    fig_Ridge = plt.figure(figsize=(12,7))
-    fig_Lasso = plt.figure(figsize=(12,7))
+    if __name__ == "__main__":  # if run bg_taskabc.py
+        fig       = plt.figure(figsize=(12,7))
+        fig_Ridge = plt.figure(figsize=(12,7))
+        fig_Lasso = plt.figure(figsize=(12,7))
+        fig_Lasso_Appendix = plt.figure(figsize=(12,7))
+        
+    else:                        # if run task_g.py
+        fig       = plt.figure(figsize=(7,7))
+        fig_Ridge = plt.figure(figsize=(7,7))
+        fig_Lasso = plt.figure(figsize=(7,7))
+    
     
     for i in range(len(deg)):
         #----------------------------------------   Scaling -----------------------------
@@ -120,7 +132,10 @@ def regression(x, y, z, deg_max = 6, bool_info = False):
 
             Ridgebeta = np.linalg.inv(Phi_train.T @ Phi_train + lmb*I) @ Phi_train.T @ z_train
 
-            LassoReg = Lasso(lmb,fit_intercept=False) # Not include intercept
+            # Suppress ConvergenceWarning
+            warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+            LassoReg = Lasso(lmb, fit_intercept=False) # Not include intercept + setting tol to not get error-messages
             LassoReg.fit(Phi_train, z_train)
             # and then make the prediction
             z_tilde_Ridge[j] = Phi_train @ Ridgebeta
@@ -137,12 +152,12 @@ def regression(x, y, z, deg_max = 6, bool_info = False):
         # -------------------------------------------- Rescaling --------------------------------------
         #Reverse wScaling with StandardScaler.inverse_transform()
         X_test = stdsc.inverse_transform(X_test)
-        x_test = X_test[:,0]
-        y_test = X_test[:,1]
+        x_test = X_test[:,0].reshape(-1,1)
+        y_test = X_test[:,1].reshape(-1,1)
 
         X_train = stdsc.inverse_transform(X_train)
-        x_train = X_train[:,0]
-        y_train = X_train[:,1]
+        x_train = X_train[:,0].reshape(-1,1)
+        y_train = X_train[:,1].reshape(-1,1)
         
         z_test = stdsc_z.inverse_transform(z_test)
         z_train = stdsc_z.inverse_transform(z_train)
@@ -175,105 +190,219 @@ def regression(x, y, z, deg_max = 6, bool_info = False):
         OLS_MSE.append([MSE(z_train, z_tilde), MSE(z_test, z_pred)])
         OLS_R2.append([R2(z_train, z_tilde), R2(z_test, z_pred)])
 
+        opacity = 0.4
+        if __name__ == "__main__":  # if run bg_taskabc.py
+            opacity = 0.2
+            surf, ax, axR, axL = plot(i, deg, lambdas, fig,fig_Ridge,fig_Lasso, x,y,z, x_train,y_train,x_test,y_test, z_pred,z_tilde, z_pred_Ridge,z_tilde_Ridge, z_pred_Lasso,z_tilde_Lasso, alpha = opacity)
+            if deg[i] == 4: # Plotting Appendix-plot Lasso Feature Selection
+                surf, axL2 = plot_Lasso_Feature_selection(i, deg, lambdas, fig_Lasso_Appendix, x,y,z,x_train,y_train,x_test,y_test, z_pred_Lasso,z_tilde_Lasso)
+            
+            colorbarL = fig_Lasso_Appendix.colorbar(surf, ax=axL2, shrink=0.5, aspect=5, pad = 0.01)
+            colorbarL.ax.set_position([0.8, 0.2, 0.7, 0.2])
 
-
-
+        # Plotting for different polynomial degree # correspond to lowest MSE
+        elif deg[i] == 21: 
+            surf, ax  = plot_OLS(i, deg,fig, x,y,z, x_train,y_train,x_test,y_test, z_pred,z_tilde, alpha = opacity)  
+            surf, axR = plot_Ridge(i, deg, lambdas, fig_Ridge, x,y,z,x_train,y_train,x_test,y_test, z_pred_Ridge,z_tilde_Ridge, alpha = opacity)  
+        elif deg[i] == 26:
+            surf, axL = plot_Lasso(i, deg, lambdas, fig_Lasso, x,y,z,x_train,y_train,x_test,y_test, z_pred_Lasso,z_tilde_Lasso,alpha = opacity)        
 
 
         
 
-    
 
-
-        # ------------------------------------- Plotting -------------------------------------
-        # OLS
-        ax = fig.add_subplot(2,3,i+1, projection='3d')
-
-        surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False, alpha = 0.7)
-
-        pred = ax.scatter(x_test, y_test, z_pred, color='r', s=10, label='z_Pred')
-        tilde = ax.scatter(x_train, y_train, z_tilde, color='g', s=10, label='z_Tilde')
-
-        fig.suptitle('OLS Regression', fontsize=16)
-        ax.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-
-        # For organizing, too much info in plots
-        if i == 0:
-            ax.set_xlabel('X axis')
-            ax.set_ylabel('Y axis')
-            ax.set_zlabel('Z axis')
-            ax.legend(loc='upper left', fontsize='small')
-
-
-        # Ridge
-        axR = fig_Ridge.add_subplot(2,3,i+1, projection='3d')
-
-        surf = axR.plot_surface(x, y, z, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False, alpha = 0.7)
-        # Plot only for highest lambda.
-        # Chaos to spot differences by plot.
-        # Will look at MSE and R2
-        pred = axR.scatter(x_test, y_test, z_pred_Ridge[-1], color='r', s=10, label=f'z_Pred, lmd = {lambdas[-1]}') 
-        tilde = axR.scatter(x_train, y_train, z_tilde_Ridge[-1], color='g', s=10, label=f'z_Tilde, lmd = {lambdas[-1]}')
-
-        fig_Ridge.suptitle(f'Ridge Regression\n  Lambda = {lambdas[-1]}', fontsize=16)
-        axR.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-        if i == 0:
-            axR.set_xlabel('X axis')
-            axR.set_ylabel('Y axis')
-            axR.set_zlabel('Z axis')
-            axR.legend(loc='upper left', fontsize='small')
-        
-
-        # Lasso
-        axL = fig_Lasso.add_subplot(2,3,i+1, projection='3d')
-
-        surf = axL.plot_surface(x, y, z, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False, alpha = 0.7)
-        # Plot only for one lambda.
-        # Chaos to spot differences by plot.
-        # Look at MSE and R2
-
-        k = -3 # Choose which lambda to plot
-        pred = axL.scatter(x_test, y_test, z_pred_Lasso[k], color='r', s=10, label=f'z_Pred, lmd = {lambdas[k]}') 
-        tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[k], color='g', s=10, label=f'z_Tilde, lmd = {lambdas[k]}')
-        fig_Lasso.suptitle(f'Lasso Regression\n  Only lambda = {lambdas[k]}', fontsize=16)
-
-        axL.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
-        if i == 0:
-            axL.set_xlabel('X axis')
-            axL.set_ylabel('Y axis')
-            axL.set_zlabel('Z axis')
-            axL.legend(loc='upper left', fontsize='small')
-
-    
     # Add a color bar which maps values to colors.
-    colorbar = fig.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
-    colorbar.ax.set_position([0.75, 0.2, 0.7, 0.2])
+    colorbar = fig.colorbar(surf, ax = ax, shrink=0.5, aspect=5, pad = 0.0001)
+    colorbar.ax.set_position([0.8, 0.2, 0.7, 0.2])
 
-    colorbarR = fig_Ridge.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
-    colorbarR.ax.set_position([0.75, 0.2, 0.7, 0.2])
+    colorbarR = fig_Ridge.colorbar(surf, ax=axR, shrink=0.5, aspect=5, pad = 0.001)
+    colorbarR.ax.set_position([0.8, 0.2, 0.7, 0.2])
 
-    colorbarL = fig_Lasso.colorbar(surf, shrink=0.5, aspect=5, pad = 0.001)
-    colorbarL.ax.set_position([0.75, 0.2, 0.7, 0.2])
+    colorbarL = fig_Lasso.colorbar(surf, ax=axL, shrink=0.5, aspect=5, pad = 0.01)
+    colorbarL.ax.set_position([0.8, 0.2, 0.7, 0.2])
 
 
-    fig.savefig('OLS.png')
-    fig_Ridge.savefig('Ridge.png')
-    fig_Lasso.savefig('Lasso.png')
-    plt.show()
+    if __name__ == "__main__": # if run bg_taskabc.py
+        fig.savefig("OLS.png")
+        fig_Ridge.savefig("Ridge.png")
+        fig_Lasso.savefig("Lasso.png")
+        fig_Lasso_Appendix.savefig("Lasso_Appendix.png")
+    else: # if run task_g.py
+        fig.savefig("OLS_Real.png")
+        fig_Ridge.savefig("Ridge_Real.png")
+        fig_Lasso.savefig("Lasso_Real.png")
+
+
 
     if bool_info == True:
         info(deg, OLSbeta_list, OLS_MSE, OLS_R2, lambdas, Ridgebeta_list, Ridge_MSE, Ridge_R2, Lassobeta_list, Lasso_MSE, Lasso_R2)
 
+    
 
 
 
+
+
+
+
+       
+
+    
+
+def plot(i, deg, lambdas, fig,fig_Ridge,fig_Lasso, x,y,z, x_train,y_train,x_test,y_test, z_pred,z_tilde, z_pred_Ridge,z_tilde_Ridge, z_pred_Lasso,z_tilde_Lasso, alpha = .5):
+    # ------------------------------------- Plotting -------------------------------------
+    # OLS
+    ax = fig.add_subplot(2,3,i+1, projection='3d')
+
+    surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+
+    pred = ax.scatter(x_test, y_test, z_pred, color='r', s=10, alpha=0.5, label='z_Pred')
+    tilde = ax.scatter(x_train, y_train, z_tilde, color='g', s=10, alpha=0.5, label='z_Tilde')
+
+    fig.suptitle('OLS Regression', fontsize=16)
+    ax.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+
+    # For organizing, too much info in plots
+    if i == 0:
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_zlabel('Z axis')
+        ax.legend(loc='upper left', fontsize='small')
+
+
+    # Ridge
+    axR = fig_Ridge.add_subplot(2,3,i+1, projection='3d')
+
+    surf = axR.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+    # Plot only for highest lambda.
+    # Chaos to spot differences by plot.
+    # Will look at MSE and R2
+    pred = axR.scatter(x_test, y_test, z_pred_Ridge[-1], color='r', s=10, alpha=0.5, label=f'z_Pred, lmd = {lambdas[-1]}') 
+    tilde = axR.scatter(x_train, y_train, z_tilde_Ridge[-1], color='g', s=10, alpha=0.5, label=f'z_Tilde, lmd = {lambdas[-1]}')
+
+    fig_Ridge.suptitle(f'Ridge Regression\n  Lambda = {lambdas[-1]}', fontsize=16)
+    axR.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+    if i == 0:
+        axR.set_xlabel('X axis')
+        axR.set_ylabel('Y axis')
+        axR.set_zlabel('Z axis')
+        axR.legend(loc='upper left', fontsize='small')
+    
+
+    # Lasso
+    axL = fig_Lasso.add_subplot(2,3,i+1, projection='3d')
+
+    surf = axL.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+    # Plot only for one lambda.
+    # Chaos to spot differences by plot.
+    # Look at MSE and R2
+
+    k = -3 # Choose which lambda to plot
+    pred = axL.scatter(x_test, y_test, z_pred_Lasso[k], color='r', s=10, alpha=0.5, label=f'z_Pred, lmd = {lambdas[k]}') 
+    tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[k], color='g', s=10, alpha=0.5, label=f'z_Tilde, lmd = {lambdas[k]}')
+    fig_Lasso.suptitle(f'Lasso Regression\n  Lambda = {lambdas[k]}', fontsize=16)
+
+    axL.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+    if i == 0:
+        axL.set_xlabel('X axis')
+        axL.set_ylabel('Y axis')
+        axL.set_zlabel('Z axis')
+        axL.legend(loc='upper left', fontsize='small')
+
+    return surf, ax, axR, axL
+
+def plot_OLS(i, deg, fig, x,y,z,x_train,y_train,x_test,y_test, z_pred,z_tilde, alpha):
+
+    ax = fig.add_subplot(1,1,1, projection='3d')
+
+    surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+
+    pred = ax.scatter(x_test, y_test, z_pred, color='r', s=0.1, alpha=alpha, label='z_Pred')
+    tilde = ax.scatter(x_train, y_train, z_tilde, color='g', s=0.1, alpha=alpha, label='z_Tilde')
+
+    fig.suptitle('OLS Regression, Lausanne', fontsize=16)
+    ax.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+    ax.legend(loc='upper left', fontsize='small')
+
+    return surf, ax
+
+def plot_Ridge(i, deg, lambdas, fig_Ridge, x,y,z,x_train,y_train,x_test,y_test, z_pred_Ridge,z_tilde_Ridge, alpha):
+    
+    axR = fig_Ridge.add_subplot(1,1,1, projection='3d')
+
+    surf = axR.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+
+    # Plot only for best (by eye) lambda.
+    k = 1
+    pred = axR.scatter(x_test, y_test, z_pred_Ridge[k], color='r', s=0.1, alpha=alpha, label=f'z_Pred, lmd = {lambdas[k]}') 
+    tilde = axR.scatter(x_train, y_train, z_tilde_Ridge[k], color='g', s=0.1, alpha=alpha, label=f'z_Tilde, lmd = {lambdas[k]}')
+
+    fig_Ridge.suptitle(f'Ridge Regression, Lausanne\n  Lambda = {lambdas[k]}', fontsize=16)
+    axR.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+
+    axR.set_xlabel('X axis')
+    axR.set_ylabel('Y axis')
+    axR.set_zlabel('Z axis')
+    axR.legend(loc='upper left', fontsize='small')
+    return surf, axR
+
+def plot_Lasso(i, deg, lambdas, fig_Lasso, x,y,z,x_train,y_train,x_test,y_test, z_pred_Lasso,z_tilde_Lasso, alpha):
+    
+    axL = fig_Lasso.add_subplot(1,1,1, projection='3d')
+
+    surf = axL.plot_surface(x, y, z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False, alpha = 0.7)
+
+    # Plot only for best (by eye) lambda.
+    k = 0 # Choose which lambda to plot
+    pred = axL.scatter(x_test, y_test, z_pred_Lasso[k], color='r', s=0.1, alpha=alpha, label=f'z_Pred, lmd = {lambdas[k]}') 
+    tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[k], color='g', s=0.1, alpha=alpha, label=f'z_Tilde, lmd = {lambdas[k]}')
+    fig_Lasso.suptitle(f'Lasso Regression, Lausanne\n  Lambda = {lambdas[k]}', fontsize=16)
+
+    axL.set_title(f'Polynomial Degree {deg[i]}', fontsize=10)
+    axL.set_xlabel('X axis')
+    axL.set_ylabel('Y axis')
+    axL.set_zlabel('Z axis')
+    axL.legend(loc='upper left', fontsize='small')
+
+    return surf, axL
+
+# Illustrating how L1-penalty works
+def plot_Lasso_Feature_selection(i, deg, lambdas, fig_Lasso_Appendix, x,y,z,x_train,y_train,x_test,y_test, z_pred_Lasso,z_tilde_Lasso):
+    for j in range(len(lambdas)):
+        axL = fig_Lasso_Appendix.add_subplot(2,3,j+1, projection='3d')
+
+        surf = axL.plot_surface(x, y, z, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False, alpha = 0.7)
+
+        k = j # Choose which lambda to plot
+        pred = axL.scatter(x_test, y_test, z_pred_Lasso[k], color='r', s=10, alpha=0.5, label=f'z_Pred') 
+        tilde = axL.scatter(x_train, y_train, z_tilde_Lasso[k], color='g', s=10, alpha=0.5, label=f'z_Tilde')
+        fig_Lasso_Appendix.suptitle(f'Lasso Regression\n  Polynomial Degree {deg[i]}', fontsize=16)
+
+        axL.set_title(f'Lambda = {lambdas[k]}', fontsize=10)
+        if j == 0:
+            axL.set_xlabel('X axis')
+            axL.set_ylabel('Y axis')
+            axL.set_zlabel('Z axis')
+            axL.legend(loc='upper left', fontsize='small')
+        
+    return surf, axL
+
+
+    
 def info(deg, OLSbeta_list, OLS_MSE, OLS_R2, lambdas, Ridgebeta_list, Ridge_MSE, Ridge_R2, Lassobeta_list, Lasso_MSE, Lasso_R2):
     # ------------------------------------------------ PRINTING INFO ------------------------------------------------------
     want_beta = False #True # If want to see beta-values
-
 
     # OLS DATA
     OLS_MSE = np.array(OLS_MSE)
@@ -301,7 +430,7 @@ def info(deg, OLSbeta_list, OLS_MSE, OLS_R2, lambdas, Ridgebeta_list, Ridge_MSE,
                 f'R2_train  = {Ridge_R2[i*len(lambdas) + j][0]:10.3e}    R2_test  = {Ridge_R2[i*len(lambdas) + j][1]:10.3e}'
                 )
             if want_beta:
-                print(f'Beta = {Ridgebeta_list[i*len(lambdas) + j].T} \n')
+                print(f'Beta = {Ridgebeta_list[i*len(lambdas) +j].T} \n')
 
     
     print()
@@ -360,7 +489,7 @@ def info(deg, OLSbeta_list, OLS_MSE, OLS_R2, lambdas, Ridgebeta_list, Ridge_MSE,
         ax.set_xlabel('Polynomial Degree')
         if i == 0:
             ax.set_ylabel('MSE')
-        ax.set_ylim(0,0.09)
+        ax.set_ylim(0,np.max(Lasso_MSE))
         ax.grid()
         ax.legend(loc='upper left', fontsize='small')
         
@@ -368,14 +497,19 @@ def info(deg, OLSbeta_list, OLS_MSE, OLS_R2, lambdas, Ridgebeta_list, Ridge_MSE,
         ax2.set_title(f'{reg_list[i]}', fontsize=10)
         ax2.set_xlabel('Polynomial Degree')
         if i == 0:
-            ax2.set_ylabel('MSE')
+            ax2.set_ylabel('R2')
         ax2.set_ylim(-.1,1)
         ax2.grid()
         ax2.legend(loc='lower left', fontsize='small')
 
     fig_MSE.tight_layout()
-    fig_MSE.savefig("MSE_task_abc.png")
-    fig_R2.savefig("R2_task_abc.png")
+    if __name__ == "__main__": # if run bg_taskabc.py
+        fig_MSE.savefig("MSE_task_abc.png")
+        fig_R2.savefig("R2_task_abc.png")
+    else: # if run task_g.py
+        fig_MSE.suptitle('MSE vs Polynomal Complexity, Lausanne', fontsize=16)
+        fig_MSE.savefig("MSE_Real.png")
+    
     plt.show()
 
 
