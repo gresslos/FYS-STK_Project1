@@ -15,6 +15,8 @@ from random import random, seed
 from scipy.ndimage import gaussian_filter
 
 from bg_taskabc import MSE, R2, Design_Matrix_2D, regression
+from op_task_e import bootstrap_num, bootstrap_comp
+from op_task_f import crossvalidation
 
 
 def filter_dtm(data, threshold=0, sigma=1):
@@ -111,6 +113,19 @@ x, y = np.meshgrid(x,y)
 deg_max = 80
 deg_own = [40,45,50,55,60] # if want to construct own poly. list
 
-regression(x,y,z,deg_max,bool_info=True)
+
+print('Regression function is running.')
+regression(x,y,z, deg_max, bool_info=True)
 #regression(x,y,z,deg_own,bool_info=True)
 
+
+print('Bootstrap for number of points is running.')
+bootstrap_num('Surfaces/Lausanne.tif', use_real_data=True, special_deg=deg_max, min_n=20+1, max_n=2020+1, interval=400)
+
+#start with a low number of bootstraps because of computation time and then MAYBE increase if it's fine
+print('Bootstrap for complexity is running.')
+bootstrap_comp(x, y, z, n_bootstraps=20, mindeg=5, maxdeg=30, interval=5)
+
+#can do k=5 since the amount of points is so large
+print('K-fold for complexity is running.')
+crossvalidation(x, y, z, mindeg=5, maxdeg=30, interval=5, k=5, a=-6, b=0)

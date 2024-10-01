@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from random import random, seed
 
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
+#from mpl_toolkits.mplot3d import Axes3D
+#from matplotlib import cm
+#from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.model_selection import train_test_split
@@ -459,12 +459,13 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
     
 
 
+special_num=20+1
+x_comp = np.linspace(0, 1, special_num)
+y_comp = np.linspace(0, 1, special_num)
+x_comp, y_comp = np.meshgrid(x_comp,y_comp)
+z_comp = FrankeFunction(x_comp, y_comp)
 
-def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
-    x = np.linspace(0, 1, special_num)
-    y = np.linspace(0, 1, special_num)
-    x, y = np.meshgrid(x,y)
-    z = FrankeFunction(x, y)
+def bootstrap_comp(x, y, z, n_bootstraps=100, maxdeg=12):
 
     x_flat = x.flatten()
     y_flat = y.flatten()
@@ -571,4 +572,5 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=12):
 #comment and uncomment to actually run parts of the code
 #regression()
 bootstrap_num()
-bootstrap_comp()
+bootstrap_comp(x_comp, y_comp, z_comp)
+
