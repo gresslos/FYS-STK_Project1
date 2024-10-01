@@ -3,19 +3,20 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from random import random, seed
 from tqdm import tqdm
+from numba import njit, jit
 
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
+#from mpl_toolkits.mplot3d import Axes3D
+#from matplotlib import cm
+#from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 
-from op_task_e import FrankeFunction, Design_Matrix_2D
+from bg_taskabc import FrankeFunction, Design_Matrix_2D
 
-#Lasso spit out A LOT of warnings
+#Lasso spits out A LOT of warnings
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -24,16 +25,9 @@ np.random.seed(1) #set seed for easier troubleshooting
 
 
 
-def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10, a=-5, b=1):
-    #The task doesn't specifically say but I think that the task wants you to
-    #vary complexity.
-    #For each complexity when using Ridge & LASSO regression you should also
-    #find the optimal lambda value for each complexity 
-    
-    x = np.linspace(0, 1, special_n)
-    y = np.linspace(0, 1, special_n)
-    x, y = np.meshgrid(x,y)
-    z = FrankeFunction(x, y)
+def crossvalidation(x, y, z, mindeg=1, maxdeg=15, interval=1, k=10, a=-6, b=1):
+    #Do k-fold cross validation to find the optimal complexity for the model
+    #For each complexity, when using Ridge & LASSO regression, the optimal lambda must be found
 
     x_flat = x.flatten()
     y_flat = y.flatten()
@@ -42,7 +36,7 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
     X = np.vstack((x_flat,y_flat)).T
     # Note: X[:,0] = x_flat  X[:,1] = y_flat
     
-    deg = np.arange(mindeg, maxdeg+1)
+    deg = np.arange(mindeg, maxdeg+interval, interval)
     
     #to use GridSearchCV you need a dictionary with parameters
     #appearantly lambda is called alpha in the scikit learn methods
@@ -75,11 +69,6 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
             #make the testing and training data from k-fold
             X_train, X_test, z_train, z_test = X[train], X[test], z_flat[train], z_flat[test]
             
-            #scale the data
-            stdsc = StandardScaler() # For x- and y-vals
-            X_train = stdsc.fit_transform(X_train)
-            X_test = stdsc.transform(X_test)
-            
             stdsc_z = StandardScaler()
             z_train = stdsc_z.fit_transform( z_train.reshape(-1,1) )
             z_test  = stdsc_z.fit_transform( z_test.reshape(-1,1)  )
@@ -87,6 +76,11 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
             #Make the design matrices
             Phi_train = Design_Matrix_2D(deg[i], X_train)
             Phi_test = Design_Matrix_2D(deg[i], X_test)
+            
+            #scale the design matrices
+            stdsc = StandardScaler() # For x- and y-vals
+            Phi_train = stdsc.fit_transform(Phi_train)
+            Phi_test = stdsc.transform(Phi_test)
             
             
             #calculate the model using the OLS method
@@ -116,11 +110,6 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
             #calculate the model using the LASSO method
             LassoReg = Lasso(alpha=lmbda_array_Lasso[i,j], fit_intercept=False) # Not include intercept
             LassoReg.fit(Phi_train, z_train)
-
-
-            #rescale the data
-            X_train = stdsc.inverse_transform(X_train)
-            X_test  = stdsc.inverse_transform(X_test)
             
             z_train = stdsc_z.inverse_transform(z_train)
             z_test = stdsc_z.inverse_transform(z_test)
@@ -181,13 +170,25 @@ def crossvalidation(n_bootstraps=100, special_n=20+1, mindeg=1, maxdeg=15, k=10,
     plt.xlabel('Polynomial degree')
     plt.ylabel('Geometric mean of $\lambda$')
     plt.xticks(deg)
+    plt.yticks(alpha_array)
+    plt.ylim(10**(a-1/2), 10**(b+1/2))
     plt.title('Geometric mean of optimal $\lambda$ for each complexity')
     plt.grid()
     plt.legend()
     plt.show()
 
+
+
+
+
+if __name__ == "__main__":
+    #----------------------------------- Making data -------------------------------------------------------------------------------
+    special_n = 20+1
+    x = np.linspace(0, 1, special_n)
+    y = np.linspace(0, 1, special_n)
+    x, y = np.meshgrid(x,y)
+    z = FrankeFunction(x, y)
     
-
-
-
-crossvalidation()
+    #comment and uncomment to actually run parts of the code
+    #regression()
+    crossvalidation(x, y, z)

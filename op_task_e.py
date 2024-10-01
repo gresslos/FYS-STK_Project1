@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from random import random, seed
+from tqdm import tqdm
 
+from imageio import imread
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -11,17 +13,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 
+from bg_taskabc import MSE, R2, FrankeFunction, Design_Matrix_2D
 
 
-"""
-Copied all the code from bg_taskabc.py (12.9.24), cleaned up a bit, and added resampling analysis.
-"""
 
 """
 This code file (op_task_e.py) is supposed to replace op_task-e.py because you can import functions
 from op_task_e.py. Python doesn't like filenames with hyphens in them.
-The actual contents of this file is the same as op_task-e.py is the same, only the name (and this
-message) is different.
+The actual contents of this file is the same as op_task-e.py, only the name (and this
+message) is supposed to be different.
 If you see this message or/and op_task-e.py, they should have been deleted.
 """
 
@@ -30,50 +30,6 @@ If you see this message or/and op_task-e.py, they should have been deleted.
 np.random.seed(1) #set seed for easier troubleshooting
 
 
-"""
-Support Functions
-"""
-
-def MSE(y_data, y_model):
-    n = np.size(y_model)
-    return np.sum((y_data-y_model)**2)/n
-
-
-def R2(y_data, y_model):
-    return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
-
-
-def FrankeFunction(x,y):
-        term1 = 0.75*np.exp( -(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2) )
-        term2 = 0.75*np.exp( -((9*x+1)**2)/49.0 - 0.1*(9*y+1)       )
-        term3 =  0.5*np.exp( -(9*x-7)**2/4.0 - 0.25*((9*y-3)**2)    )
-        term4 = -0.2*np.exp( -(9*x-4)**2 - (9*y-7)**2               )
-        return term1 + term2 + term3 + term4
-
-
-def Design_Matrix_2D(deg, X):
-    # Design matrix for a function that takes in two input variables
-    # The number of polynomial terms for two variables (x, y) up to degree d is (d+1)(d+2)/2
-    # Minus 1 from dropping intercept-column
-    num_terms = int((deg + 1) * (deg + 2) / 2 - 1)
-
-    Phi = np.zeros((X.shape[0], num_terms))
-    # PS: not include intercept in design matrix, will scale (centered values)
-    #dx and dy = polynomial degree in x and y direction
-    col = 0
-    for dx in range(1, deg+1):
-        for dy in range(dx+1):
-            # X[:,0] = x-values
-            # X[:,1] = y-values
-            Phi[:,col] = ( X[:,0]**(dx - dy) ) * ( X[:,1]**dy )
-            col += 1
-    return Phi
-
-
-
-"""
-Computation Functions
-"""
 
 def regression(savefig=False):
 
@@ -353,13 +309,15 @@ def regression(savefig=False):
 
 
 
-def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, interval=5):
+def bootstrap_num(data=1, use_real_data=False, n_bootstraps=100, row_start=1000, special_deg=5, min_n=10+1, max_n=80+1, interval=5):
     #I usually add one to the number of points to make the points in x and y
     #have a simpler decimal representation.
     #Example: linspace(0,1,10) = (0, 0.111, 0.222, 0.333, 0.444, 0.555, 0.666, 0.777, 0.888, 1)
     
-    n_list = np.arange(min_n, max_n+1, interval)
+    #max_n+1 because you want to include the actual value of max_n
+    n_list = np.arange(min_n, max_n+min_n+1, interval)
     
+    #declare all the useful arrays to store the calculated values
     error_test    = np.zeros(len(n_list))
     bias_test     = np.zeros(len(n_list))
     variance_test = np.zeros(len(n_list))
@@ -368,12 +326,35 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
     bias_train     = np.zeros(len(n_list))
     variance_train = np.zeros(len(n_list))
     
-    for i in range(len(n_list)):
-        #make data using FrankeFunction
-        x      = np.linspace(0, 1, int(n_list[i]))
-        y      = np.linspace(0, 1, int(n_list[i]))
-        x, y   = np.meshgrid(x, y)
-        z      = FrankeFunction(x, y)
+    if use_real_data == True:
+        #only have to actually read the data if you want to use it
+        surf = imread(data)
+    
+    for i in tqdm( range(len(n_list)) ):
+        
+        if use_real_data == False:
+            #make data using FrankeFunction
+            x      = np.linspace(0, 1, int(n_list[i]))
+            y      = np.linspace(0, 1, int(n_list[i]))
+            x, y   = np.meshgrid(x, y)
+            z      = FrankeFunction(x, y)
+        
+        else:
+            #turn the data into a usable format and declare x and y
+            row_end = row_start + int(n_list[i])     # End of rows 
+
+            col_start = row_start   # Start of rows 
+            col_end = row_end       # End of rows 
+
+            # Extract the center half of the matrix
+            surf = surf[row_start:row_end, col_start:col_end]
+            
+            z = surf
+
+            m = len(surf)
+            x = np.linspace(0,1,m)
+            y = np.linspace(0,1,m)
+            x, y = np.meshgrid(x,y)
 
         x_flat = x.flatten()
         y_flat = y.flatten()
@@ -384,37 +365,35 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
         
         z_train = z_train.reshape(-1,1)
         z_test = z_test.reshape(-1,1)
-        
-        #scale the data
-        stdsc = StandardScaler() # For x- and y-vals
-        X_train_scaled = stdsc.fit_transform(X_train)
-        X_test_scaled = stdsc.transform(X_test)
-        
+    
         #compute the Phi matrices from unscrambled/"bootstrap-ed" data
-        Phi_test  = Design_Matrix_2D(special_deg, X_test_scaled)
-        Phi_train = Design_Matrix_2D(special_deg, X_train_scaled)
+        Phi_test  = Design_Matrix_2D(special_deg, X_test)
+        Phi_train = Design_Matrix_2D(special_deg, X_train)
         
+        #scale the design matrices
+        stdsc = StandardScaler() # For x- and y-vals
+        Phi_train = stdsc.fit_transform(Phi_train)
+        Phi_test = stdsc.transform(Phi_test)
         
         #initialise different arrays to store the different models/predictions from bootstrap
-        z_pred  = np.zeros( (X_test_scaled.shape[0], n_bootstraps)  )
-        z_tilde = np.zeros( (X_train_scaled.shape[0], n_bootstraps) )
+        z_pred  = np.zeros( (X_test.shape[0], n_bootstraps)  )
+        z_tilde = np.zeros( (X_train.shape[0], n_bootstraps) )
         
         #loop to do the bootstrap technique a certain amount of times
         for j in range(n_bootstraps):
             #scramble the scaled data
             X_, z_ = resample(X_train, z_train)
             
-            stdsc_ = StandardScaler()
-            X_ = stdsc_.fit_transform(X_)
-            
             stdsc_z_ = StandardScaler()
             z_ = stdsc_z_.fit_transform(z_.reshape(-1,1))
             
             #evaluate the new model on the same testing and training data each time.
             Phi_train_ = Design_Matrix_2D(special_deg, X_)
+            stdsc_ = StandardScaler()
+            Phi_train_ = stdsc_.fit_transform(Phi_train_)
+            
             OLSbeta_ = np.linalg.inv(Phi_train_.T @ Phi_train_) @ Phi_train_.T @ z_
             
-            X_ = stdsc_.inverse_transform(X_)
             z_pred[:, j]  = stdsc_z_.inverse_transform( (Phi_test @ OLSbeta_).reshape(1,-1)  )
             z_tilde[:, j] = stdsc_z_.inverse_transform( (Phi_train @ OLSbeta_).reshape(1,-1) )
 
@@ -444,12 +423,7 @@ def bootstrap_num(n_bootstraps=100, special_deg=5, min_n=10+1, max_n=80+1, inter
     
 
 
-
-def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
-    x = np.linspace(0, 1, special_num)
-    y = np.linspace(0, 1, special_num)
-    x, y = np.meshgrid(x,y)
-    z = FrankeFunction(x, y)
+def bootstrap_comp(x, y, z, n_bootstraps=100, mindeg=1, maxdeg=10, interval=1):
 
     x_flat = x.flatten()
     y_flat = y.flatten()
@@ -459,7 +433,7 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
     X_train, X_test, z_train, z_test = train_test_split(X, z_flat, test_size=0.25)
     # Note: X[:,0] = x_flat  X[:,1] = y_flat
     
-    deg = np.arange(1, maxdeg+1) #degrees of polynomial
+    deg = np.arange(mindeg, maxdeg+1, interval) #degrees of polynomial
     
     
     error_test    = np.zeros(len(deg))
@@ -470,11 +444,7 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
     bias_train = np.zeros(len(deg))
     variance_train = np.zeros(len(deg))
     
-    for i in range(len(deg)):
-        stdsc = StandardScaler() # For x- and y-vals
-        X_train_scaled = stdsc.fit_transform(X_train)
-        X_test_scaled = stdsc.transform(X_test)
-
+    for i in tqdm( range(len(deg)) ):
         z_train = z_train.reshape(-1,1)
         z_test = z_test.reshape(-1,1)
         
@@ -483,27 +453,33 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
         z_tilde = np.empty((X_train.shape[0], n_bootstraps))
         
         # Making Design Matrix Phi 
-        Phi_train = Design_Matrix_2D(deg[i], X_train_scaled)
-        Phi_test = Design_Matrix_2D(deg[i], X_test_scaled)
+        Phi_train = Design_Matrix_2D(deg[i], X_train)
+        Phi_test = Design_Matrix_2D(deg[i], X_test)
+        
+        #Scaling Design Matrix
+        stdsc = StandardScaler() # For x- and y-vals
+        Phi_train = stdsc.fit_transform(Phi_train)
+        Phi_test = stdsc.transform(Phi_test)
         
         
         for j in range(n_bootstraps):
             X_, z_ = resample(X_train, z_train)
             
-            stdsc_ = StandardScaler()
-            X_ = stdsc_.fit_transform(X_)
-            
+            #scale resampled z values
             stdsc_z_ = StandardScaler()
             z_ = stdsc_z_.fit_transform(z_.reshape(-1,1))
             
-            # Evaluate the new model on the same testing and training data each time.
+            #make and scale resampled design matrix
             Phi_train_ = Design_Matrix_2D(deg[i], X_)
+            stdsc_ = StandardScaler()
+            Phi_train_ = stdsc_.fit_transform(Phi_train_)
+            
             OLSbeta_ = np.linalg.inv(Phi_train_.T @ Phi_train_) @ Phi_train_.T @ z_
 
-            X_ = stdsc_.inverse_transform(X_)
+            # Evaluate the new model on the same testing and training data each time.
             z_pred[:, j]  = stdsc_z_.inverse_transform( (Phi_test @ OLSbeta_).reshape(1,-1)  )
             z_tilde[:, j] = stdsc_z_.inverse_transform( (Phi_train @ OLSbeta_).reshape(1,-1) )
-
+        
         
         error_test[i]    = np.mean( np.mean((z_test - z_pred)**2, axis=1, keepdims=True) )
         bias_test[i]     = np.mean( (z_test - np.mean(z_pred, axis=1, keepdims=True))**2 )
@@ -530,7 +506,17 @@ def bootstrap_comp(n_bootstraps=100, special_num=20+1, maxdeg=10):
 
 
 
-#comment and uncomment to actually run parts of the code
-#regression()
-bootstrap_num()
-bootstrap_comp()
+
+
+if __name__ == "__main__":
+    #----------------------------------- Making data -------------------------------------------------------------------------------
+    special_n=20+1
+    x_comp = np.linspace(0, 1, special_n)
+    y_comp = np.linspace(0, 1, special_n)
+    x_comp, y_comp = np.meshgrid(x_comp,y_comp)
+    z_comp = FrankeFunction(x_comp, y_comp)
+    
+    #comment and uncomment to actually run parts of the code
+    #regression()
+    bootstrap_num()
+    bootstrap_comp(x_comp, y_comp, z_comp)
