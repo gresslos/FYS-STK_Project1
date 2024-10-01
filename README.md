@@ -6,6 +6,7 @@
 - task_g.py      :   OLS, Ridge, Lasso regression (LEGG TIL KFOLD OLE PETTER)  on **real topografic data** from Lausanne (dataset: `Lausanne.tif`)
 - Additional_Plots folder   : Include plots in report and additional plots
 - TestRuns folder           : Include testing of bg_taskabc.py with **Design Matrix = Identity Matrix**
+- Surfaces                  : .tif file with **Lausanne Topographic Data**
   
 ## Functions
 ### `Regression-Function` (found in `bg_taskabc.py`)
