@@ -1,19 +1,18 @@
-Test_identity_matrix.py is a copy of a later version of bg_taskabc.py (small changes in setup but overall the same regression method). It include:
+# FYS-STK_Project1 - Testrun
 
-'test_X_is_identity_matrix = True'- statement which will allow for the code to set the design matrix to the identity matrix.
+## Overview
+Test_identity_matrix.py  :  
+- Include: Starting-code for OLS, Ridge, Lasso regression on **1D Franke's Function** 
+- Include: Code for OLS, Ridge, Lasso regression on **2D Franke's Function** (from bg_taskabc.py)
+- Testing if MSE = 0 and R2 = 1 for OLS Regressions when **Design Matrix = Identity Matrix** in 1D and 2D 
+    - **Note**: should see \( \tilde{y} = y \)   ( trained model = function for training )
+    - PS: Only look at trained model, not predicted model.
+- Gives plots (`FrankeFunction_1D_regression.png` and `OLS.png`) of OLS Regressions fit in respectively 1D and 2D 
+- Change `test_X_is_identity_matrix = True / False` to see / not see testing with identity matrix
 
-This will lead to y_tilde = y_train
 
-(Look at y_tilde given split data to test and training data, and compara data (y_train) to fitted model (y_tilde))
+## How to Run the Code
+```bash
+$ python3 .\Test_identity_matrix.py
 
-The code plots MSE and R2 for y_tilde/y_train which is respectivly 0.00 and 1.00.
 
-Plots is for design matrix = Identity Matrix 
-
-NOTE:
-
-Could look at the plots in TestRuns, but both the plots and task_a_b_c.py was pushed by accident. 
-
-Do not know how to delete it from Git. 
-
-We are new to Git.
