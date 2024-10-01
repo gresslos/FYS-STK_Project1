@@ -1,8 +1,11 @@
 # FYS-STK_Project1
 
 ## Overview
-- bg_taskabc.py  :   OLS, Ridge, Lasso regression on **Franke's Function**   
-- task_g.py      :   OLS, Ridge, Lasso regression on **real topografic data** from Lausanne (dataset: `Lausanne.tif`)
+- bg_taskabc.py  :   OLS, Ridge, Lasso regression on **Franke's Function**
+- YOUR .py OLP
+- task_g.py      :   OLS, Ridge, Lasso regression (LEGG TIL KFOLD OLE PETTER)  on **real topografic data** from Lausanne (dataset: `Lausanne.tif`)
+- Additional_Plots folder   : Include plots in report and additional plots
+- TestRuns folder           : Include testing of bg_taskabc.py with **Design Matrix = Identity Matrix**
   
 ## Functions
 ### `Regression-Function` (found in `bg_taskabc.py`)
