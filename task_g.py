@@ -84,10 +84,10 @@ surf = imread('Surfaces/Lausanne.tif')
 
 # ---------- Slice the terrain model ---------------
 row_start = 1000 # Start of rows 
-row_end = 2000     # End of rows 
+row_end =   1003 # End of rows 
 
 col_start = row_start   # Start of rows 
-col_end = row_end       # End of rows 
+col_end   = row_end       # End of rows 
 
 # Extract the center half of the matrix
 surf = surf[row_start:row_end, col_start:col_end]
@@ -108,7 +108,9 @@ x = np.linspace(0,1,m)
 y = np.linspace(0,1,m)
 x, y = np.meshgrid(x,y)
 
-deg_max = 26
+deg_max = 80
+deg_own = [40,45,50,55,60] # if want to construct own poly. list
 
 regression(x,y,z,deg_max,bool_info=True)
+#regression(x,y,z,deg_own,bool_info=True)
 
