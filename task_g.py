@@ -15,8 +15,7 @@ from random import random, seed
 from scipy.ndimage import gaussian_filter
 
 from bg_taskabc import MSE, R2, Design_Matrix_2D, regression
-from op_task_e import bootstrap_num, bootstrap_comp
-from op_task_f import crossvalidation
+from op_task_f import crossvalidation, crossvalidation_NoLasso
 
 
 def filter_dtm(data, threshold=0, sigma=1):
@@ -86,7 +85,7 @@ surf = imread('Surfaces/Lausanne.tif')
 
 # ---------- Slice the terrain model ---------------
 row_start = 1000 # Start of rows 
-row_end =   1003 # End of rows 
+row_end =   1250 # End of rows 
 
 col_start = row_start   # Start of rows 
 col_end   = row_end       # End of rows 
@@ -115,17 +114,14 @@ deg_own = [40,45,50,55,60] # if want to construct own poly. list
 
 
 print('Regression function is running.')
-regression(x,y,z, deg_max, bool_info=True)
-#regression(x,y,z,deg_own,bool_info=True)
+#regression(x,y,z, deg_max, bool_info=True)
+regression(x,y,z,deg_own,bool_info=True)
 
-
-print('Bootstrap for number of points is running.')
-bootstrap_num('Surfaces/Lausanne.tif', use_real_data=True, special_deg=deg_max, min_n=20+1, max_n=2020+1, interval=400)
-
-#start with a low number of bootstraps because of computation time and then MAYBE increase if it's fine
-print('Bootstrap for complexity is running.')
-bootstrap_comp(x, y, z, n_bootstraps=20, mindeg=5, maxdeg=30, interval=5)
 
 #can do k=5 since the amount of points is so large
-print('K-fold for complexity is running.')
-crossvalidation(x, y, z, mindeg=5, maxdeg=30, interval=5, k=5, a=-6, b=0)
+#print('K-fold WITH LASSO is running.')
+#crossvalidation(x, y, z, mindeg=deg_own[0], maxdeg=deg_own[-1], interval=5, k=5, a=-8, b=-4)
+
+#can do k=5 since the amount of points is so large
+print('K-fold WITHOUT LASSO is running.')
+crossvalidation_NoLasso(x, y, z, mindeg=deg_own[0], maxdeg=deg_own[-1], interval=5, k=5, a=-8, b=-4)
