@@ -18,28 +18,6 @@ from bg_taskabc import MSE, R2, Design_Matrix_2D, regression
 from op_task_f import crossvalidation, crossvalidation_NoLasso
 
 
-def filter_dtm(data, threshold=0, sigma=1):
-    """
-    Filters DTM data to remove negative values and apply smoothing.
-    
-    Parameters:
-    - data: numpy array, the DTM data (2D matrix of elevations)
-    - threshold: values below this will be set to this threshold
-    - sigma: standard deviation for Gaussian smoothing filter (default=1)
-    
-    Returns:
-    - filtered_data: numpy array, the filtered DTM data
-    """
-    
-    # Step 1: Set all values below the threshold (e.g., 0) to the threshold
-    data[data < threshold] = threshold
-    
-    # Step 2: Apply Gaussian smoothing to reduce noise (you can skip this step if unwanted)
-    filtered_data = gaussian_filter(data, sigma=sigma)
-    
-    return filtered_data
-
-
 
 def plot_surface(surf):
 
@@ -121,7 +99,7 @@ regression(x,y,z, deg_max, bool_info=True)
 #regression(x,y,z,deg_own,bool_info=True)
 #regression(x,y,z,deg_own2, bool_info=True)
 
-
+# ------------- cross validation --------------------------
 #can do k=5 since the amount of points is so large
 #print('K-fold WITH LASSO is running.')
 #crossvalidation(x, y, z, mindeg=deg_own[0], maxdeg=deg_own[-1], interval=5, k=5, a=-8, b=-4)

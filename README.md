@@ -22,7 +22,7 @@
 
 ### `Bootstrap (number of points)` (found in `op_task_e.py`)
 - **Input Variables**:
-  - `data`: Directory path to topographic data, ex: 'Surfaces/Lausanna.tif'.
+  - `data`: Directory path to topographic data, ex: 'Surfaces/Lausanne.tif'.
   - `use_real_data`: Boolean value to decide whether to use real data or constructed data.
   - `n_bootstraps`: Number of times to do bootstrap resampling.
   - `row_start`: Decide the index for the datapoint (along one axis) where you want to start.
