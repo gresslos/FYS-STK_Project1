@@ -3,7 +3,6 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from random import random, seed
 from tqdm import tqdm
-from numba import njit, jit
 
 #from mpl_toolkits.mplot3d import Axes3D
 #from matplotlib import cm
