@@ -53,10 +53,6 @@ def plot_surface(surf):
 
 # ------------------------------------------------------ Make data ----------------------------------------------------
 
-# Other terrain example
-# surf = imread('Sao_Tome.tif')
-
-
 surf = imread('Surfaces/Lausanne.tif')
 
 # ---------- Slice the terrain model ---------------
